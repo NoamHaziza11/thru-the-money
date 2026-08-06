@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F6F5F1">
+<title>Thru The Money</title>
+
+<!-- מונע הבזק כיוון/שפה שגוי לפני שהמודולים נטענים -->
+<script>
+(function () {
+  var l = localStorage.getItem('ttm_lang') === 'en' ? 'en' : 'he';
+  document.documentElement.lang = l;
+  document.documentElement.dir = l === 'he' ? 'rtl' : 'ltr';
+})();
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700&family=Rubik:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<!-- מסך טעינה -->
+<div class="boot" id="boot">
+  <div class="boot__mark">Thru The Money</div>
+</div>
+
+<!-- מסך אימות -->
+<div class="auth" id="auth-screen" hidden>
+  <button class="lang-toggle lang-toggle--auth" id="lang-toggle-auth" type="button" data-i18n="topbar.langToggle">English</button>
+
+  <div class="auth__brand">
+    <div class="auth__logo">Thru The Money</div>
+    <p class="auth__tag" data-i18n="auth.tag">לדעת בכל רגע כמה כסף באמת נכנס וכמה יצא</p>
+  </div>
+
+  <form class="card auth__card" id="auth-form" novalidate>
+    <div class="msg msg--error" id="auth-error" hidden role="alert"></div>
+
+    <label class="field">
+      <span class="field__label" data-i18n="auth.emailLabel">אימייל</span>
+      <input class="field__input" type="email" id="auth-email" autocomplete="email" required>
+    </label>
+
+    <label class="field">
+      <span class="field__label" data-i18n="auth.passwordLabel">סיסמה</span>
+      <input class="field__input" type="password" id="auth-password" autocomplete="current-password" minlength="6" required>
+    </label>
+
+    <button class="btn btn--primary btn--block" id="auth-submit" type="submit" data-i18n="auth.signIn">התחברות</button>
+  </form>
+
+  <p class="auth__switch">
+    <span id="auth-switch-q" data-i18n="auth.noAccount">אין לך חשבון עדיין?</span>
+    <button type="button" id="auth-toggle" data-i18n="auth.toSignUp">להרשמה</button>
+  </p>
+</div>
+
+<!-- האפליקציה -->
+<div class="app" id="app" hidden>
+
+  <header class="topbar">
+    <div class="topbar__actions">
+      <button class="btn btn--ghost" id="signout-btn" data-i18n="topbar.signOut">יציאה</button>
+      <button class="lang-toggle" id="lang-toggle-app" type="button" data-i18n="topbar.langToggle">English</button>
+    </div>
+    <div class="topbar__period">
+      <button class="topbar__nav" id="period-prev" data-i18n-aria="topbar.prevMonth" aria-label="החודש הקודם">‹</button>
+      <span class="topbar__month" id="period-label">—</span>
+      <button class="topbar__nav" id="period-next" data-i18n-aria="topbar.nextMonth" aria-label="החודש הבא">›</button>
+    </div>
+  </header>
+
+  <main class="main">
+
+    <section class="screen is-active" data-screen="today" id="screen-today">
+      <div class="card balance">
+        <p class="balance__label" data-i18n="balance.label">נשאר החודש</p>
+        <p class="balance__amount num" id="balance-amount">$0.00</p>
+
+        <div class="balance__split">
+          <div class="split split--in">
+            <p class="split__label" data-i18n="balance.in">נכנס</p>
+            <p class="split__value num" id="balance-in">$0.00</p>
+          </div>
+          <div class="split split--out">
+            <p class="split__label" data-i18n="balance.out">יצא</p>
+            <p class="split__value num" id="balance-out">$0.00</p>
+          </div>
+        </div>
+
+        <div class="meter" id="meter">
+          <div class="meter__track">
+            <div class="meter__fill" id="meter-fill" style="--fill:0%"></div>
+          </div>
+          <div class="meter__caption">
+            <span data-i18n="balance.spendCaption">הוצאות מתוך הכנסה</span>
+            <strong id="meter-pct">0%</strong>
+          </div>
+        </div>
+      </div>
+
+      <h2 class="screen__title" data-i18n="today.title">תנועות אחרונות</h2>
+      <div id="today-list">
+        <div class="txlist" id="today-txlist" hidden></div>
+        <div class="empty" id="today-empty">
+          <svg class="empty__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M6 3h9l4 4v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/>
+            <path d="M14 3v4a1 1 0 0 0 1 1h4"/>
+            <path d="M8 12h8M8 15.5h8M8 18.5h5"/>
+          </svg>
+          <div class="empty__title" data-i18n="today.emptyTitle">אין עדיין תנועות החודש</div>
+          <p class="empty__text" data-i18n="today.emptyText">לחץ על אחד הכפתורים למטה כדי להזין הכנסה או הוצאה ראשונה.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen" data-screen="analysis" id="screen-analysis" hidden>
+      <div class="empty" id="analysis-empty">
+        <svg class="empty__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4 20V10M12 20V4M20 20v-7"/>
+          <path d="M2.5 20h19"/>
+        </svg>
+        <div class="empty__title" data-i18n="analysis.emptyTitle">אין עדיין נתונים לניתוח</div>
+        <p class="empty__text" data-i18n="analysis.emptyText">אחרי כמה תנועות יופיעו כאן עוגת ההוצאות והגרף לפי חודשים.</p>
+      </div>
+
+      <div id="analysis-content" hidden>
+        <h2 class="screen__title" data-i18n="analysis.pieTitle">פילוח הוצאות</h2>
+        <div class="card chart-card" id="pie-wrap">
+          <div class="chart-canvas-wrap"><canvas id="pie-canvas"></canvas></div>
+        </div>
+        <div class="empty empty--inline" id="pie-empty" hidden>
+          <p class="empty__text" data-i18n="analysis.noExpenses">אין עדיין הוצאות החודש</p>
+        </div>
+        <div id="pie-detail"></div>
+
+        <h2 class="screen__title" data-i18n="analysis.barTitle">נכנס מול יצא — 6 חודשים</h2>
+        <div class="card chart-card">
+          <div class="chart-canvas-wrap"><canvas id="bar-canvas"></canvas></div>
+        </div>
+
+        <h2 class="screen__title" data-i18n="analysis.tableTitle">קטגוריות</h2>
+        <div id="category-table"></div>
+      </div>
+    </section>
+
+    <section class="screen" data-screen="summary" id="screen-summary" hidden>
+      <div class="screen__title-row">
+        <h2 class="screen__title" data-i18n="summary.title">סיכום</h2>
+        <button class="icon-btn" id="settings-btn" data-i18n-aria="settings.title" aria-label="הגדרות" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="empty" id="summary-empty">
+        <svg class="empty__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="5" y="4" width="14" height="17" rx="1.5"/>
+          <path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/>
+          <path d="M8.5 11l2 2 4-4.5"/>
+        </svg>
+        <div class="empty__title" data-i18n="summary.emptyTitle">אין עדיין דוח לחודש הזה</div>
+        <p class="empty__text" data-i18n="summary.emptyText">בסוף החודש תוכל לקבל כאן דוח מלא והמלצות מבוססות על המספרים שלך.</p>
+      </div>
+
+      <div id="summary-content" hidden>
+        <div class="card report-card">
+          <div class="report-row">
+            <span data-i18n="summary.totalIn">סה"כ נכנס</span>
+            <span class="num" id="report-in"></span>
+          </div>
+          <div class="report-row">
+            <span data-i18n="summary.totalOut">סה"כ יצא</span>
+            <span class="num" id="report-out"></span>
+          </div>
+          <div class="report-row report-row--balance">
+            <span data-i18n="summary.balance">יתרה</span>
+            <span class="num" id="report-balance"></span>
+          </div>
+          <div class="report-row">
+            <span data-i18n="summary.biggestCategory">הקטגוריה הגדולה</span>
+            <span id="report-biggest-cat"></span>
+          </div>
+          <div class="report-row">
+            <span data-i18n="summary.biggestChange">השינוי הגדול ביותר</span>
+            <span id="report-biggest-change"></span>
+          </div>
+        </div>
+
+        <h2 class="screen__title" data-i18n="summary.aiTitle">המלצות AI</h2>
+        <div class="card ai-card">
+          <div id="ai-text"></div>
+          <button class="btn btn--primary btn--block" id="ai-btn" type="button"></button>
+        </div>
+
+        <button class="btn btn--ghost btn--block" id="export-csv-btn" type="button" data-i18n="summary.exportCsv">ייצוא כל הנתונים ל-CSV</button>
+      </div>
+    </section>
+
+  </main>
+
+  <div class="actions" id="quick-actions">
+    <button class="btn btn--income" id="add-income" data-i18n="actions.income">+ הכנסה</button>
+    <button class="btn btn--expense" id="add-expense" data-i18n="actions.expense">− הוצאה</button>
+  </div>
+
+  <nav class="tabbar">
+    <button class="tab is-active" data-target="today" aria-current="page">
+      <svg class="tab__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M6 3h9l4 4v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/>
+        <path d="M14 3v4a1 1 0 0 0 1 1h4"/>
+        <path d="M8 12h8M8 15.5h8M8 18.5h5"/>
+      </svg>
+      <span data-i18n="tab.today">היום</span>
+    </button>
+    <button class="tab" data-target="analysis" aria-current="false">
+      <svg class="tab__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M4 20V10M12 20V4M20 20v-7"/>
+        <path d="M2.5 20h19"/>
+      </svg>
+      <span data-i18n="tab.analysis">ניתוח</span>
+    </button>
+    <button class="tab" data-target="summary" aria-current="false">
+      <svg class="tab__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="5" y="4" width="14" height="17" rx="1.5"/>
+        <path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/>
+        <path d="M8.5 11l2 2 4-4.5"/>
+      </svg>
+      <span data-i18n="tab.summary">סיכום</span>
+    </button>
+  </nav>
+
+</div>
+
+<!-- גיליון תחתון (משמש משלב 3) -->
+<div class="sheet-backdrop" id="sheet-backdrop" hidden></div>
+<div class="sheet" id="sheet" hidden role="dialog" aria-modal="true" aria-labelledby="sheet-title">
+  <div class="sheet__grab" aria-hidden="true"></div>
+  <div class="sheet__head">
+    <h2 class="sheet__title" id="sheet-title"></h2>
+    <button class="btn btn--ghost" id="sheet-close" data-i18n-aria="sheet.close" aria-label="סגור">✕</button>
+  </div>
+  <div class="sheet__body" id="sheet-body"></div>
+</div>
+
+<div class="toast-host" id="toast-host" aria-live="polite"></div>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

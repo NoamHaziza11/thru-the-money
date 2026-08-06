@@ -1,0 +1,39 @@
+[build]
+  publish = "deploy"
+  functions = "netlify/functions"
+  command = ""
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# ה-service worker חייב להיבדק מול השרת בכל טעינה,
+# אחרת הטלפון ממשיך להגיש גרסה ישנה גם אחרי העלאת CACHE_VERSION.
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/manifest.json"
+  [headers.values]
+    Cache-Control = "no-cache"
+
+# בלי build step אין hashing לשמות קבצים — אותו js/app.js נשאר באותו
+# URL בכל דיפלוי. בלי no-cache כאן, דפדפן שכבר ביקר עלול להריץ קוד
+# ישן אחרי דיפלוי חדש (בדיוק כמו הבאג שתפסנו בבדיקה המקומית).
+[[headers]]
+  for = "/js/*"
+  [headers.values]
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "DENY"
+    Referrer-Policy = "strict-origin-when-cross-origin"
