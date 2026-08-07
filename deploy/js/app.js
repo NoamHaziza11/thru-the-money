@@ -206,6 +206,17 @@ async function handleSession(session) {
 }
 
 // ------------------------------------------------------------
+// PWA — אופליין לקריאה. נכשל בשקט ברשת מקומית לא-HTTPS (מותר —
+// service worker דורש HTTPS או localhost, זו מגבלת הדפדפן, לא באג).
+// ------------------------------------------------------------
+function registerServiceWorker() {
+  if (!('serviceWorker' in navigator)) return;
+  navigator.serviceWorker.register('./sw.js').catch((err) => {
+    console.warn('[sw] registration failed:', err);
+  });
+}
+
+// ------------------------------------------------------------
 // אתחול
 // ------------------------------------------------------------
 async function boot() {
@@ -224,6 +235,7 @@ async function boot() {
   initAuthForm();
   initQuickActions();
   renderPeriod();
+  registerServiceWorker();
 
   const session = await getSession();
   await handleSession(session);
