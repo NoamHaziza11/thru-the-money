@@ -265,7 +265,12 @@ deploy/icons/icon-180.png     חדש — apple-touch-icon, iOS דורש את ז�
 
 **מגבלה אמיתית, לא באג:** service worker דורש HTTPS או `localhost` — בדיקתי המקומית (`http://localhost:8099`) עברה כי `localhost` פטור מהדרישה, אבל **הכתובת שנתתי לך לבדיקה בטלפון (`http://192.168.1.223:8099`) לא HTTPS ולא localhost, אז ה-PWA (התקנה למסך הבית, אופליין) לא יעבדו שם.** זה יעבוד נכון רק בכתובת החיה `https://thru-the-money.netlify.app`.
 
-**נבדק (מקומית, `localhost`):** service worker נרשם והופעל (`state: activated`), 17 קבצי שלד נשמרו במטמון (בדקתי את התוכן דרך ה-Cache API), manifest.json תקין עם כל 4 האייקונים. **לא נבדק:** הזרימה המלאה של "הוסף למסך הבית" בטלפון אמיתי — זה תלוי בך לבדוק בפועל.
+**נבדק (מקומית, `localhost`, ולאחר הדיפלוי — גם על הכתובת החיה):** service worker נרשם והופעל (`state: activated`) בשני המקומות, 17 קבצי שלד נשמרו במטמון (בדקתי את התוכן דרך ה-Cache API), manifest.json תקין עם כל 4 האייקונים, `/sw.js` מוגש עם `Cache-Control: no-cache, no-store, must-revalidate` בפרודקשן. **לא נבדק:** הזרימה המלאה של "הוסף למסך הבית" בטלפון אמיתי — זה תלוי בך לבדוק בפועל.
+
+### פריסה עדכנית — Push #2 (6.8.2026)
+
+- ניסיתי לדחוף (`git push`) ישירות דרך ה-Bash tool אחרי ש-GitHub Desktop הגדיר credential helper (`osxkeychain`) — נכשל: `could not read Username for 'https://github.com': Device not configured`. כנראה ה-keychain item של GitHub Desktop נגיש רק לתהליך של Desktop עצמו, לא ל-git CLI כללי. **חזרנו לדפוס המקורי: commit מקומי דרכי, push דרך GitHub Desktop על ידך.**
+- דיפלוי אוטומטי רץ אחרי ה-push, אומת חי: `manifest.json`, `sw.js`, `icons/icon-192.png` כולם `200`, service worker נרשם ופעיל על `https://thru-the-money.netlify.app`.
 
 ---
 
