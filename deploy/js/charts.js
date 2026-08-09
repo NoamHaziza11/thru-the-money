@@ -7,18 +7,17 @@ import { Chart, registerables } from 'https://cdn.jsdelivr.net/npm/chart.js@4.4.
 import { fetchTransactions } from './db.js';
 import { getCategory, hasTransactionsThisPeriod } from './transactions.js';
 import { $, esc, onScreenChange } from './ui.js';
-import { periodRange, shiftPeriod, periodShortLabel, money, signedMoney, pct, dateLabel } from './format.js';
+import { periodRange, shiftPeriod, periodShortLabel, currentPeriod, todayLA, money, signedMoney, pct, dateLabel } from './format.js';
 import { t } from './i18n.js';
 
 Chart.register(...registerables);
 
-// הגרפים לרוב נבנים בזמן שמסך "ניתוח" עדיין display:none (כדי שהמעבר
+// הגרפים לרוב נבנים בזמן שהמסך שלהם עדיין display:none (כדי שהמעבר
 // אליו ירגיש מיידי) — Chart.js מודד גודל 0 בזמן היצירה ונשאר "עיוור"
 // לזה גם אחרי שהמסך נהיה גלוי. resize() ידני כשהמסך מוצג פותר את זה.
 onScreenChange((screen) => {
-  if (screen !== 'analysis') return;
-  pieChart?.resize();
-  barChart?.resize();
+  if (screen === 'analysis') { pieChart?.resize(); barChart?.resize(); }
+  if (screen === 'today') trendChart?.resize();
 });
 
 // פלטה שנגזרת מהעיצוב הנוכחי — לא מהצבעים הישנים ששמורים בעמודת
@@ -31,6 +30,7 @@ const CHART_COLORS = [
 let rangeTransactions = [];
 let pieChart = null;
 let barChart = null;
+let trendChart = null;
 let selectedCategoryId = null;
 
 export async function loadAnalysisData(userId, period) {
@@ -202,6 +202,71 @@ function renderTable(period) {
         </span>
       </div>`;
   }).join('');
+}
+
+// ------------------------------------------------------------
+// גרף מגמה — הוצאות מצטברות לאורך החודש, מסך "היום".
+// אלמנט חדש (מבוסס רפרנס שנתן נועם): קו חלק עם מילוי גרדיאנט.
+// ------------------------------------------------------------
+function daysInMonth(year, month) {
+  return new Date(Date.UTC(year, month, 0)).getUTCDate();
+}
+
+export function renderTrend(period) {
+  const wrap = $('#trend-wrap');
+  const canvasEl = $('#trend-canvas');
+  if (!wrap || !canvasEl) return;
+
+  if (!hasTransactionsThisPeriod()) {
+    wrap.hidden = true;
+    return;
+  }
+  wrap.hidden = false;
+
+  const now = currentPeriod();
+  const isCurrent = period.year === now.year && period.month === now.month;
+  const daysCount = isCurrent ? Number(todayLA().split('-')[2]) : daysInMonth(period.year, period.month);
+
+  const dailyTotals = new Array(daysCount + 1).fill(0);
+  txInPeriod(period).filter((x) => x.kind === 'expense').forEach((x) => {
+    const day = Number(x.occurred_on.split('-')[2]);
+    if (day >= 1 && day <= daysCount) dailyTotals[day] += Number(x.amount);
+  });
+
+  const cumulative = [];
+  let running = 0;
+  for (let d = 1; d <= daysCount; d += 1) {
+    running += dailyTotals[d];
+    cumulative.push(running);
+  }
+
+  const ctx = canvasEl.getContext('2d');
+  const gradient = ctx.createLinearGradient(0, 0, 0, 110);
+  gradient.addColorStop(0, 'rgba(166, 58, 44, .3)');
+  gradient.addColorStop(1, 'rgba(166, 58, 44, 0)');
+
+  if (trendChart) trendChart.destroy();
+  trendChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: cumulative.map((_, i) => i + 1),
+      datasets: [{
+        data: cumulative,
+        borderColor: '#A63A2C',
+        backgroundColor: gradient,
+        fill: true,
+        tension: .35,
+        pointRadius: 0,
+        borderWidth: 2.5,
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: { x: { display: false }, y: { display: false } },
+      plugins: { legend: { display: false }, tooltip: { enabled: false } },
+    },
+  });
 }
 
 // ------------------------------------------------------------

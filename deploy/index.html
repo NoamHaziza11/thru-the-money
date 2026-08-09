@@ -91,12 +91,18 @@
 
         <div class="balance__split">
           <div class="split split--in">
-            <p class="split__label" data-i18n="balance.in">נכנס</p>
-            <p class="split__value num" id="balance-in">$0.00</p>
+            <span class="split__icon" aria-hidden="true">↗</span>
+            <div class="split__body">
+              <p class="split__label" data-i18n="balance.in">נכנס</p>
+              <p class="split__value num" id="balance-in">$0.00</p>
+            </div>
           </div>
           <div class="split split--out">
-            <p class="split__label" data-i18n="balance.out">יצא</p>
-            <p class="split__value num" id="balance-out">$0.00</p>
+            <span class="split__icon" aria-hidden="true">↘</span>
+            <div class="split__body">
+              <p class="split__label" data-i18n="balance.out">יצא</p>
+              <p class="split__value num" id="balance-out">$0.00</p>
+            </div>
           </div>
         </div>
 
@@ -110,6 +116,13 @@
           </div>
         </div>
       </div>
+
+      <div class="card trend-card" id="trend-wrap" hidden>
+        <p class="trend__label" data-i18n="today.trendLabel">הוצאות מצטברות החודש</p>
+        <div class="trend-canvas-wrap"><canvas id="trend-canvas"></canvas></div>
+      </div>
+
+      <div class="filter-chips" id="category-filter" hidden></div>
 
       <h2 class="screen__title" data-i18n="today.title">תנועות אחרונות</h2>
       <div id="today-list">

@@ -46,6 +46,38 @@ export function showScreen(name) {
 }
 
 // ------------------------------------------------------------
+// אנימציית מספר עולה — "רגע האיכות" של כרטיס היתרה. מכבד
+// prefers-reduced-motion (קופצת ישר לערך הסופי, בלי אנימציה).
+// ------------------------------------------------------------
+function prefersReducedMotion() {
+  return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+}
+
+/**
+ * מעדכן אלמנט מהערך המספרי האחרון שהוצג בו (נשמר ב-data-raw-value)
+ * אל ערך יעד חדש, באנימציה חלקה. formatter הופך מספר-ביניים לטקסט.
+ */
+export function animateNumber(el, toValue, formatter, duration = 700) {
+  const from = Number(el.dataset.rawValue ?? 0);
+  el.dataset.rawValue = String(toValue);
+
+  if (prefersReducedMotion() || from === toValue) {
+    el.textContent = formatter(toValue);
+    return;
+  }
+
+  const start = performance.now();
+  const easeOutExpo = (t) => (t >= 1 ? 1 : 1 - 2 ** (-10 * t));
+
+  function tick(now) {
+    const progress = Math.min((now - start) / duration, 1);
+    el.textContent = formatter(from + (toValue - from) * easeOutExpo(progress));
+    if (progress < 1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
+// ------------------------------------------------------------
 // טוסט
 // ------------------------------------------------------------
 export function toast(message, variant = '') {

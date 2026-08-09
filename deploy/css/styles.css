@@ -9,21 +9,22 @@
 /* ---------- 1. טוקנים ---------- */
 :root {
   --ink:      #14171A;   /* טקסט ראשי, כפתור ראשי */
-  --paper:    #F6F5F1;   /* רקע — נייר חם, לא לבן קר */
+  --paper:    #FBF2E7;   /* רקע — קרם חם, לא נייר אפרפר */
   --surface:  #FFFFFF;   /* משטח הכרטיסים */
-  --muted:    #85807A;   /* טקסט משני — חם, לא אפור-כחול */
+  --muted:    #8A7F72;   /* טקסט משני — חם, לא אפור-כחול */
   --accent:   #1F6F5C;   /* אזמרגד עמוק — הכנסה, פוקוס, מצב פעיל */
   --accent-2: #163F35;   /* אזמרגד כהה — הדגשות טקסט על אקסנט */
   --negative: #A63A2C;   /* לבנים/אדמדם מרוסן — הוצאה בלבד, פונקציונלי */
 
-  --line:      #E7E3DC;
-  --line-soft: #EFEDE7;
-  --income-bg: #E7F0EC;
-  --expense-bg:#F5E7E2;
+  --line:      #EBDFCE;
+  --line-soft: #F2E9DC;
+  --income-bg: #DFEEE7;
+  --expense-bg:#F6E1D7;
 
   --r-sm: 8px;
   --r-md: 14px;
   --r-lg: 20px;
+  --r-pill: 999px;        /* פינות-פיל — צורת החתימה של העדכון הזה */
 
   --shadow-sm: 0 1px 2px rgba(20, 23, 26, .05);
   --shadow-md: 0 4px 16px rgba(20, 23, 26, .08);
@@ -99,8 +100,8 @@ button { cursor: pointer; border: none; background: none; }
   display: inline-flex; align-items: center; justify-content: center;
   gap: 8px;
   min-height: var(--tap);
-  padding: 0 20px;
-  border-radius: var(--r-md);
+  padding: 0 22px;
+  border-radius: var(--r-pill);
   font-weight: 600;
   font-size: 1rem;
   white-space: nowrap;
@@ -243,7 +244,8 @@ button { cursor: pointer; border: none; background: none; }
 .screen__title {
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: 1.1rem;
+  font-size: 1.3rem;
+  letter-spacing: -.01em;
   margin: 26px 0 12px;
 }
 
@@ -303,16 +305,32 @@ button { cursor: pointer; border: none; background: none; }
 
 .balance__split {
   display: grid; grid-template-columns: 1fr 1fr;
-  gap: 12px; margin-bottom: 20px;
+  gap: 10px; margin-bottom: 20px;
 }
+/* צ'יפים צבעוניים — לא רק טקסט צבעוני, גם רקע ותג עגול עם חץ */
 .split {
-  padding: 10px 12px;
-  border-radius: var(--r-md);
-  background: var(--paper);
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 14px;
+  border-radius: var(--r-pill);
 }
-.split__label { font-size: .78rem; font-weight: 600; color: var(--muted); margin-bottom: 2px; }
-.split__value { font-size: 1.1rem; font-weight: 700; }
-.split--in  .split__value { color: var(--accent); }
+.split--out { background: var(--expense-bg); }
+.split--in  { background: var(--income-bg); }
+
+.split__icon {
+  flex: 0 0 auto;
+  width: 26px; height: 26px;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  font-size: .8rem; font-weight: 700;
+  background: color-mix(in srgb, var(--surface) 65%, transparent);
+}
+.split--out .split__icon { color: var(--negative); }
+.split--in  .split__icon { color: var(--accent-2); }
+
+.split__body { min-width: 0; }
+.split__label { font-size: .72rem; font-weight: 600; color: var(--muted); margin-bottom: 1px; }
+.split__value { font-size: 1rem; font-weight: 700; }
+.split--in  .split__value { color: var(--accent-2); }
 .split--out .split__value { color: var(--negative); }
 
 /* מד ההוצאות — פס דק ומדויק שממלא לפי אחוז ההוצאות מתוך ההכנסות.
@@ -376,6 +394,18 @@ button { cursor: pointer; border: none; background: none; }
 .tx__amount { font-weight: 700; white-space: nowrap; }
 .tx__amount.is-income  { color: var(--accent); }
 .tx__amount.is-expense { color: var(--negative); }
+
+/* החלקה למחיקה — .tx נגרר מעל .tx-swipe__delete שחושף מאחור */
+.tx-swipe { position: relative; overflow: hidden; border-radius: var(--r-md); }
+.tx-swipe .tx { position: relative; z-index: 1; touch-action: pan-y; }
+.tx-swipe__delete {
+  position: absolute; inset-block: 0; inset-inline-start: 0;
+  width: 76px;
+  display: grid; place-items: center;
+  background: var(--negative); color: #fff;
+  font-size: .82rem; font-weight: 700;
+  border-radius: var(--r-md);
+}
 
 /* ============================================================
    12.5 גיליון הזנה — הזנה חדשה ועריכה
@@ -491,6 +521,42 @@ button { cursor: pointer; border: none; background: none; }
 .empty__text { color: var(--muted); font-size: .92rem; max-width: 30ch; margin-inline: auto; }
 
 .empty--inline { padding: 20px 16px; border-style: solid; margin-bottom: 16px; }
+
+/* ============================================================
+   10.5 גרף מגמה + שורת סינון קטגוריות — מסך "היום"
+   ============================================================ */
+.trend-card { padding: 16px 16px 8px; margin: 14px 0; }
+.trend__label {
+  font-size: .8rem; font-weight: 600; color: var(--muted);
+  margin-bottom: 4px;
+}
+.trend-canvas-wrap { position: relative; height: 110px; }
+
+.filter-chips {
+  display: flex; gap: 8px;
+  margin-bottom: 18px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+}
+.filter-chips::-webkit-scrollbar { display: none; }
+
+.filter-chip {
+  flex: 0 0 auto;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px;
+  border-radius: var(--r-pill);
+  border: 1.5px solid var(--line);
+  background: var(--surface);
+  font-size: .85rem; font-weight: 600; color: var(--muted);
+  transition: border-color var(--dur) var(--ease), background var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+.filter-chip__icon { font-size: 1rem; line-height: 1; }
+.filter-chip.is-active {
+  border-color: var(--accent);
+  background: var(--income-bg);
+  color: var(--accent-2);
+}
 
 /* ============================================================
    13.5 מסך ניתוח — גרפים וטבלת קטגוריות

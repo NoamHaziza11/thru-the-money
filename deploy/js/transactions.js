@@ -7,7 +7,7 @@ import {
   fetchCategories, fetchTransactions,
   insertTransaction, updateTransaction, deleteTransaction,
 } from './db.js';
-import { $, esc, openSheet, closeSheet, toast } from './ui.js';
+import { $, esc, openSheet, closeSheet, toast, animateNumber } from './ui.js';
 import { periodRange, money, signedMoney, pct, dateLabel, todayLA } from './format.js';
 import { t } from './i18n.js';
 
@@ -55,10 +55,10 @@ export function renderBalanceCard() {
   const spendPct = pct(expense, income);
 
   const amountEl = $('#balance-amount');
-  amountEl.textContent = money(balance);
+  animateNumber(amountEl, balance, money);
   amountEl.classList.toggle('is-negative', balance < 0);
-  $('#balance-in').textContent = money(income);
-  $('#balance-out').textContent = money(expense);
+  animateNumber($('#balance-in'), income, money);
+  animateNumber($('#balance-out'), expense, money);
   $('#meter-fill').style.setProperty('--fill', spendPct + '%');
   $('#meter-pct').textContent = spendPct + '%';
   $('#meter').classList.toggle('is-hot', spendPct >= 90);
@@ -67,6 +67,10 @@ export function renderBalanceCard() {
 // ------------------------------------------------------------
 // רשימת תנועות — מסך "היום"
 // ------------------------------------------------------------
+let activeCategoryFilter = null; // null = הכל
+
+export function resetCategoryFilter() { activeCategoryFilter = null; }
+
 function txRowHtml(tx) {
   const cat = findCategory(tx.category_id);
   const icon = cat ? cat.icon : '📌';
@@ -76,17 +80,78 @@ function txRowHtml(tx) {
   const amountClass = tx.kind === 'income' ? 'is-income' : 'is-expense';
 
   return `
-    <button class="tx" type="button" data-id="${tx.id}">
-      <span class="tx__icon" aria-hidden="true">${icon}</span>
-      <span class="tx__body">
-        <span class="tx__cat">${name}</span>
-        <span class="tx__meta">${esc(meta)}</span>
-      </span>
-      <span class="tx__amount ${amountClass} num">${signedMoney(tx.amount, tx.kind)}</span>
-    </button>`;
+    <div class="tx-swipe" data-id="${tx.id}">
+      <button class="tx-swipe__delete" type="button">${t('edit.delete')}</button>
+      <button class="tx" type="button">
+        <span class="tx__icon" aria-hidden="true">${icon}</span>
+        <span class="tx__body">
+          <span class="tx__cat">${name}</span>
+          <span class="tx__meta">${esc(meta)}</span>
+        </span>
+        <span class="tx__amount ${amountClass} num">${signedMoney(tx.amount, tx.kind)}</span>
+      </button>
+    </div>`;
 }
 
-export function renderTransactionList(onRowClick) {
+/** לוגית: לפי dir הנוכחי (RTL/LTR), לאיזה כיוון "גרירה לסוף" מותרת */
+function dirSign() {
+  return document.documentElement.dir === 'rtl' ? -1 : 1;
+}
+
+function attachSwipeToDelete(wrapEl, onChanged) {
+  const rowEl = wrapEl.querySelector('.tx');
+  const delEl = wrapEl.querySelector('.tx-swipe__delete');
+  const THRESHOLD = 76;
+  let startX = 0;
+  let dx = 0;
+  let dragging = false;
+  let wasDragged = false;
+
+  rowEl.addEventListener('pointerdown', (e) => {
+    dragging = true;
+    wasDragged = false;
+    startX = e.clientX;
+    rowEl.setPointerCapture(e.pointerId);
+    rowEl.style.transition = 'none';
+  });
+
+  rowEl.addEventListener('pointermove', (e) => {
+    if (!dragging) return;
+    const raw = e.clientX - startX;
+    if (Math.abs(raw) > 8) wasDragged = true;
+    dx = raw * dirSign() > 0 ? Math.min(Math.abs(raw), THRESHOLD) * dirSign() : 0;
+    rowEl.style.transform = `translateX(${dx}px)`;
+  });
+
+  function endDrag() {
+    if (!dragging) return;
+    dragging = false;
+    rowEl.style.transition = '';
+    const revealed = Math.abs(dx) > THRESHOLD * 0.55;
+    rowEl.style.transform = revealed ? `translateX(${dirSign() * THRESHOLD}px)` : '';
+  }
+  rowEl.addEventListener('pointerup', endDrag);
+  rowEl.addEventListener('pointercancel', endDrag);
+
+  rowEl.addEventListener('click', () => {
+    if (wasDragged) { wasDragged = false; return; }
+    attachSwipeToDelete._onRowClick(wrapEl.dataset.id);
+  });
+
+  delEl.addEventListener('click', async () => {
+    try {
+      await deleteTransaction(wrapEl.dataset.id);
+      toast(t('edit.deleted'), 'ok');
+      onChanged();
+    } catch (err) {
+      toast(t(err.message), 'error');
+    }
+  });
+}
+
+export function renderTransactionList(onRowClick, onChanged) {
+  attachSwipeToDelete._onRowClick = onRowClick;
+
   const listEl = $('#today-txlist');
   const emptyEl = $('#today-empty');
 
@@ -96,12 +161,50 @@ export function renderTransactionList(onRowClick) {
     emptyEl.hidden = false;
     return;
   }
-
   emptyEl.hidden = true;
+
+  const filtered = activeCategoryFilter
+    ? transactions.filter((x) => x.category_id === activeCategoryFilter)
+    : transactions;
+
   listEl.hidden = false;
-  listEl.innerHTML = transactions.map(txRowHtml).join('');
-  listEl.querySelectorAll('.tx').forEach((el) => {
-    el.addEventListener('click', () => onRowClick(el.dataset.id));
+  listEl.innerHTML = filtered.length
+    ? filtered.map(txRowHtml).join('')
+    : `<p class="empty__text" style="padding:24px 0;text-align:center">${t('today.emptyTitle')}</p>`;
+
+  listEl.querySelectorAll('.tx-swipe').forEach((wrap) => attachSwipeToDelete(wrap, onChanged));
+}
+
+// ------------------------------------------------------------
+// שורת סינון קטגוריות — רק קטגוריות שיש להן תנועה החודש
+// ------------------------------------------------------------
+export function renderCategoryFilterChips(onChange) {
+  const host = $('#category-filter');
+  if (!host) return;
+
+  const usedIds = new Set(transactions.map((x) => x.category_id).filter(Boolean));
+  const usedCats = categories.filter((c) => usedIds.has(c.id));
+
+  if (!usedCats.length) {
+    host.hidden = true;
+    host.innerHTML = '';
+    return;
+  }
+  host.hidden = false;
+
+  const allChip = `<button class="filter-chip${activeCategoryFilter === null ? ' is-active' : ''}" type="button" data-id="">${t('today.filterAll')}</button>`;
+  const chips = usedCats.map((c) => `
+    <button class="filter-chip${activeCategoryFilter === c.id ? ' is-active' : ''}" type="button" data-id="${c.id}">
+      <span class="filter-chip__icon" aria-hidden="true">${c.icon}</span>${esc(c.name)}
+    </button>`).join('');
+
+  host.innerHTML = allChip + chips;
+  host.querySelectorAll('.filter-chip').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      activeCategoryFilter = btn.dataset.id || null;
+      renderCategoryFilterChips(onChange);
+      onChange();
+    });
   });
 }
 

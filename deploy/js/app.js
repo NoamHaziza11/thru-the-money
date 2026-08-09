@@ -9,10 +9,10 @@ import { currentPeriod, periodLabel, shiftPeriod } from './format.js';
 import { getLang, setLang, t, applyI18n } from './i18n.js';
 import {
   loadCategories, loadPeriodTransactions,
-  renderBalanceCard, renderTransactionList,
+  renderBalanceCard, renderTransactionList, renderCategoryFilterChips, resetCategoryFilter,
   openEntrySheet, openEditSheet,
 } from './transactions.js';
-import { loadAnalysisData, renderAnalysis } from './charts.js';
+import { loadAnalysisData, renderAnalysis, renderTrend } from './charts.js';
 import { runRecurringGeneration } from './recurring.js';
 import { initSummary, renderSummary } from './summary.js';
 
@@ -38,8 +38,7 @@ function initLangToggle() {
     renderPeriod();
     setAuthMode(authMode);
     if (userId) {
-      renderBalanceCard();
-      renderTransactionList(onRowClick);
+      renderTodayScreen();
       renderAnalysis(period);
       renderSummary(userId, period);
     }
@@ -61,12 +60,24 @@ function renderPeriod() {
   $('#period-next').disabled = isCurrentPeriod(period);
 }
 
+// רשימת התנועות של "היום" בלבד (מכבדת סינון קטגוריה פעיל) — נקראת גם
+// כ-callback מ-renderCategoryFilterChips כדי לא לרענן יתר על המידה יתרה/גרף.
+function renderTodayList() {
+  renderTransactionList(onRowClick, onDataChanged);
+}
+
+function renderTodayScreen() {
+  renderBalanceCard();
+  renderCategoryFilterChips(renderTodayList);
+  renderTodayList();
+  renderTrend(period);
+}
+
 async function refreshPeriodData() {
   if (!userId) return;
   try {
     await loadPeriodTransactions(userId, period);
-    renderBalanceCard();
-    renderTransactionList(onRowClick);
+    renderTodayScreen();
     await loadAnalysisData(userId, period);
     renderAnalysis(period);
     await renderSummary(userId, period);
@@ -78,12 +89,14 @@ async function refreshPeriodData() {
 function initPeriodNav() {
   $('#period-prev').addEventListener('click', () => {
     period = shiftPeriod(period, -1);
+    resetCategoryFilter();
     renderPeriod();
     refreshPeriodData();
   });
   $('#period-next').addEventListener('click', () => {
     if (isCurrentPeriod(period)) return;
     period = shiftPeriod(period, 1);
+    resetCategoryFilter();
     renderPeriod();
     refreshPeriodData();
   });
@@ -152,8 +165,7 @@ function initAuthForm() {
 // תנועה חדשה/מעודכנת/נמחקת משפיעה גם על גרפי הניתוח, לא רק על היום.
 // ------------------------------------------------------------
 async function onDataChanged() {
-  renderBalanceCard();
-  renderTransactionList(onRowClick);
+  renderTodayScreen();
   try {
     await loadAnalysisData(userId, period);
     renderAnalysis(period);
