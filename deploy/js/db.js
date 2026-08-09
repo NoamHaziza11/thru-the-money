@@ -31,12 +31,54 @@ export function assertOk({ data, error }, errorKey = 'error.loadData') {
 export async function fetchCategories(userId) {
   const res = await supabase
     .from('categories')
-    .select('id, name, kind, icon, color, sort_order')
+    .select('id, name, name_en, kind, icon, color, sort_order')
     .eq('user_id', userId)
     .eq('is_archived', false)
     .order('kind', { ascending: true })
     .order('sort_order', { ascending: true });
   return assertOk(res, 'error.loadData');
+}
+
+/** כולל גם קטגוריות בארכיון — למסך "ניהול קטגוריות" בלבד */
+export async function fetchAllCategories(userId) {
+  const res = await supabase
+    .from('categories')
+    .select('id, name, name_en, kind, icon, color, sort_order, is_archived')
+    .eq('user_id', userId)
+    .order('kind', { ascending: true })
+    .order('sort_order', { ascending: true });
+  return assertOk(res, 'error.loadData');
+}
+
+export async function insertCategory(userId, { name, name_en, kind, icon, sort_order }) {
+  const res = await supabase
+    .from('categories')
+    .insert({ user_id: userId, name, name_en: name_en || null, kind, icon: icon || '📌', sort_order })
+    .select('id, name, name_en, kind, icon, color, sort_order, is_archived')
+    .single();
+  const { data, error } = res;
+  if (error) {
+    if (error.code === '23505') return { duplicate: true };
+    console.error('[db] error.saveCategory:', error);
+    throw new Error('error.saveCategory');
+  }
+  return { duplicate: false, data };
+}
+
+export async function updateCategory(id, patch) {
+  const res = await supabase
+    .from('categories')
+    .update(patch)
+    .eq('id', id)
+    .select('id, name, name_en, kind, icon, color, sort_order, is_archived')
+    .single();
+  const { data, error } = res;
+  if (error) {
+    if (error.code === '23505') return { duplicate: true };
+    console.error('[db] error.saveCategory:', error);
+    throw new Error('error.saveCategory');
+  }
+  return { duplicate: false, data };
 }
 
 // ------------------------------------------------------------

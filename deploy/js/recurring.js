@@ -6,7 +6,8 @@ import {
   fetchRecurringRules, insertRecurringRule, updateRecurringRule, deleteRecurringRule,
   insertRecurringTransaction,
 } from './db.js';
-import { getAllCategories, getCategory } from './transactions.js';
+import { getAllCategories, getCategory, categoryName } from './transactions.js';
+import { openCategoriesSheet } from './categories.js';
 import { $, esc, openSheet, closeSheet, toast } from './ui.js';
 import { todayLA, shiftPeriod, money } from './format.js';
 import { t } from './i18n.js';
@@ -79,7 +80,7 @@ function catsGridHtml(kind, selectedId) {
   return cats.map((c) => `
     <button class="catchip${c.id === selectedId ? ' is-selected' : ''}" type="button" data-id="${c.id}">
       <span class="catchip__icon" aria-hidden="true">${c.icon}</span>
-      <span class="catchip__name">${esc(c.name)}</span>
+      <span class="catchip__name">${esc(categoryName(c))}</span>
     </button>`).join('');
 }
 
@@ -206,7 +207,7 @@ function ruleRowHtml(rule) {
     <button class="tx" type="button" data-id="${rule.id}" style="${rule.is_active ? '' : 'opacity:.55'}">
       <span class="tx__icon" aria-hidden="true">${cat?.icon || '📌'}</span>
       <span class="tx__body">
-        <span class="tx__cat">${cat ? esc(cat.name) : ''}</span>
+        <span class="tx__cat">${cat ? esc(categoryName(cat)) : ''}</span>
         <span class="tx__meta">${esc(meta)}</span>
       </span>
       <span class="tx__amount ${amountClass} num">${money(rule.amount)}</span>
@@ -245,6 +246,9 @@ export function openSettingsSheet(userId, onRuleChanged) {
         <button class="btn btn--income" id="rule-add-income" type="button">${t('recurring.newIncome')}</button>
         <button class="btn btn--expense" id="rule-add-expense" type="button">${t('recurring.newExpense')}</button>
       </div>
+
+      <h3 class="screen__title" data-i18n="categories.sectionTitle">${esc(t('categories.sectionTitle'))}</h3>
+      <button class="btn btn--ghost btn--block" id="manage-categories-btn" type="button">${t('categories.manageBtn')}</button>
     </div>`;
 
   openSheet({
@@ -263,6 +267,10 @@ export function openSettingsSheet(userId, onRuleChanged) {
       });
       sheetEl.querySelector('#rule-add-expense').addEventListener('click', () => {
         openRuleSheet(userId, null, 'expense', afterAdd);
+      });
+
+      sheetEl.querySelector('#manage-categories-btn').addEventListener('click', () => {
+        openCategoriesSheet(userId, onRuleChanged);
       });
     },
   });

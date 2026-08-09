@@ -3,7 +3,7 @@
 // ============================================================
 
 import { supabase, fetchAllTransactions, fetchMonthlySummary, upsertMonthlySummary } from './db.js';
-import { hasTransactionsThisPeriod, getAllCategories } from './transactions.js';
+import { hasTransactionsThisPeriod, getAllCategories, categoryName } from './transactions.js';
 import { computeSummary, getExpenseBreakdown } from './charts.js';
 import { openSettingsSheet } from './recurring.js';
 import { $, esc, toast } from './ui.js';
@@ -27,13 +27,13 @@ function renderReport(period) {
   // כדי שסימן ה-+/− לא "יברח" כשהוא צמוד לטקסט עברי (שם הקטגוריה) —
   // בלי בידוד כזה אלגוריתם ה-bidi מזיז את הסימן לצד הלא נכון.
   $('#report-biggest-cat').innerHTML = s.biggestCategory
-    ? `${s.biggestCategory.category?.icon || ''} ${esc(s.biggestCategory.category?.name || '')} — <span class="num">${money(s.biggestCategory.amount)}</span>`
+    ? `${s.biggestCategory.category?.icon || ''} ${esc(categoryName(s.biggestCategory.category))} — <span class="num">${money(s.biggestCategory.amount)}</span>`
     : '—';
 
   if (s.biggestChange && Math.abs(s.biggestChange.delta) > 0.005) {
     const sign = s.biggestChange.delta > 0 ? '+' : '';
     $('#report-biggest-change').innerHTML =
-      `${s.biggestChange.category?.icon || ''} ${esc(s.biggestChange.category?.name || '')} — <span class="num">${sign}${money(s.biggestChange.delta)}</span>`;
+      `${s.biggestChange.category?.icon || ''} ${esc(categoryName(s.biggestChange.category))} — <span class="num">${sign}${money(s.biggestChange.delta)}</span>`;
   } else {
     $('#report-biggest-change').textContent = t('summary.noChange');
   }
@@ -113,7 +113,7 @@ async function exportCsv(userId) {
   if (!rows.length) { toast(t('summary.exportEmpty')); return; }
 
   const categories = getAllCategories();
-  const catName = (id) => categories.find((c) => c.id === id)?.name || '';
+  const catName = (id) => categoryName(categories.find((c) => c.id === id));
 
   const header = ['date', 'kind', 'amount', 'category', 'note', 'source'];
   const lines = [header.join(',')];

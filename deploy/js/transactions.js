@@ -9,7 +9,7 @@ import {
 } from './db.js';
 import { $, esc, openSheet, closeSheet, toast, animateNumber } from './ui.js';
 import { periodRange, money, signedMoney, pct, dateLabel, todayLA } from './format.js';
-import { t } from './i18n.js';
+import { t, getLang } from './i18n.js';
 
 let categories = [];
 let transactions = [];
@@ -40,6 +40,12 @@ function findCategory(id) {
 export function getCategory(id) { return findCategory(id); }
 export function getAllCategories() { return categories; }
 export function hasTransactionsThisPeriod() { return transactions.length > 0; }
+
+/** שם הקטגוריה בשפה הנוכחית — נופל חזרה לעברית אם אין תרגום אנגלי */
+export function categoryName(cat) {
+  if (!cat) return '';
+  return getLang() === 'en' && cat.name_en ? cat.name_en : cat.name;
+}
 
 // ------------------------------------------------------------
 // כרטיס היתרה — נכנס/יצא/נשאר + מד ההוצאות
@@ -74,7 +80,7 @@ export function resetCategoryFilter() { activeCategoryFilter = null; }
 function txRowHtml(tx) {
   const cat = findCategory(tx.category_id);
   const icon = cat ? cat.icon : '📌';
-  const name = cat ? esc(cat.name) : '';
+  const name = cat ? esc(categoryName(cat)) : '';
   const note = tx.note ? esc(tx.note) : '';
   const meta = note ? `${dateLabel(tx.occurred_on)} · ${note}` : dateLabel(tx.occurred_on);
   const amountClass = tx.kind === 'income' ? 'is-income' : 'is-expense';
@@ -195,7 +201,7 @@ export function renderCategoryFilterChips(onChange) {
   const allChip = `<button class="filter-chip${activeCategoryFilter === null ? ' is-active' : ''}" type="button" data-id="">${t('today.filterAll')}</button>`;
   const chips = usedCats.map((c) => `
     <button class="filter-chip${activeCategoryFilter === c.id ? ' is-active' : ''}" type="button" data-id="${c.id}">
-      <span class="filter-chip__icon" aria-hidden="true">${c.icon}</span>${esc(c.name)}
+      <span class="filter-chip__icon" aria-hidden="true">${c.icon}</span>${esc(categoryName(c))}
     </button>`).join('');
 
   host.innerHTML = allChip + chips;
@@ -218,7 +224,7 @@ function catsGridHtml(kind, selectedId) {
   return cats.map((c) => `
     <button class="catchip${c.id === selectedId ? ' is-selected' : ''}" type="button" data-id="${c.id}">
       <span class="catchip__icon" aria-hidden="true">${c.icon}</span>
-      <span class="catchip__name">${esc(c.name)}</span>
+      <span class="catchip__name">${esc(categoryName(c))}</span>
     </button>`).join('');
 }
 

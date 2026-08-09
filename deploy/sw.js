@@ -8,7 +8,7 @@
 // בלי זה הטלפון ממשיך להגיש גרסה ישנה מהמטמון.
 // ============================================================
 
-const CACHE_VERSION = 'v2';
+const CACHE_VERSION = 'v3';
 const SHELL_CACHE = `ttm-shell-${CACHE_VERSION}`;
 const FONT_CACHE = `ttm-fonts-${CACHE_VERSION}`;
 
@@ -19,6 +19,7 @@ const SHELL_ASSETS = [
   './css/styles.css',
   './js/app.js',
   './js/auth.js',
+  './js/categories.js',
   './js/charts.js',
   './js/config.js',
   './js/db.js',

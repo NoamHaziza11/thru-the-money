@@ -5,7 +5,7 @@
 
 import { Chart, registerables } from 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/+esm';
 import { fetchTransactions } from './db.js';
-import { getCategory, hasTransactionsThisPeriod } from './transactions.js';
+import { getCategory, hasTransactionsThisPeriod, categoryName } from './transactions.js';
 import { $, esc, onScreenChange } from './ui.js';
 import { periodRange, shiftPeriod, periodShortLabel, currentPeriod, todayLA, money, signedMoney, pct, dateLabel } from './format.js';
 import { t } from './i18n.js';
@@ -75,7 +75,7 @@ function showPieDetail(categoryId, txs) {
       <div class="tx">
         <span class="tx__icon" aria-hidden="true">${cat?.icon || '📌'}</span>
         <span class="tx__body">
-          <span class="tx__cat">${cat ? esc(cat.name) : ''}</span>
+          <span class="tx__cat">${cat ? esc(categoryName(cat)) : ''}</span>
           <span class="tx__meta">${esc(meta)}</span>
         </span>
         <span class="tx__amount is-expense num">${signedMoney(tx.amount, 'expense')}</span>
@@ -102,7 +102,7 @@ function renderPie(period) {
   const entries = [...byCat.entries()].sort((a, b) => b[1] - a[1]);
   const labels = entries.map(([id]) => {
     const cat = getCategory(id);
-    return cat ? `${cat.icon} ${cat.name}` : '?';
+    return cat ? `${cat.icon} ${categoryName(cat)}` : '?';
   });
   const data = entries.map(([, amt]) => amt);
   const colors = entries.map((_, i) => CHART_COLORS[i % CHART_COLORS.length]);
@@ -193,7 +193,7 @@ function renderTable(period) {
       <div class="cat-row">
         <span class="cat-row__icon" aria-hidden="true">${cat?.icon || '📌'}</span>
         <span class="cat-row__body">
-          <span class="cat-row__name">${cat ? esc(cat.name) : ''}</span>
+          <span class="cat-row__name">${cat ? esc(categoryName(cat)) : ''}</span>
           <span class="cat-row__pct">${share}%</span>
         </span>
         <span class="cat-row__end">
@@ -328,6 +328,6 @@ export function computeSummary(period) {
 export function getExpenseBreakdown(period) {
   const byCat = sumByCategory(txInPeriod(period), 'expense');
   return [...byCat.entries()]
-    .map(([id, amount]) => ({ name: getCategory(id)?.name || '?', amount }))
+    .map(([id, amount]) => ({ name: categoryName(getCategory(id)) || '?', amount }))
     .sort((a, b) => b.amount - a.amount);
 }
