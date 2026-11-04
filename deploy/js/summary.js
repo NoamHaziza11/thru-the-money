@@ -80,6 +80,7 @@ async function generateAi(userId, period, stats) {
     });
     if (!res.ok) throw new Error('bad_response');
     const { text } = await res.json();
+    if (!text?.trim()) throw new Error('empty_response'); // לא שומרים תוצאה ריקה במסד
 
     renderAiText(text);
     await upsertMonthlySummary(userId, period.year, period.month, {

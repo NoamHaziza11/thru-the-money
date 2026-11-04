@@ -64,7 +64,10 @@ exports.handler = async (event) => {
       },
       body: JSON.stringify({
         model: ANTHROPIC_MODEL,
-        max_tokens: 700,
+        max_tokens: 1500,
+        // בלי חשיבה: 3-5 תובנות קצרות לא צריכות אותה, והתשובה חוזרת מהר יותר.
+        // בלי השורה הזו המודל חושב כברירת מחדל, והבלוק הראשון אינו טקסט.
+        thinking: { type: 'disabled' },
         messages: [{ role: 'user', content: prompt }],
       }),
     });
@@ -80,7 +83,16 @@ exports.handler = async (event) => {
   }
 
   const data = await anthropicRes.json();
-  const text = data.content?.[0]?.text?.trim() || '';
+  const text = (data.content || [])
+    .filter((block) => block.type === 'text')
+    .map((block) => block.text)
+    .join('\n')
+    .trim();
+
+  if (!text) {
+    console.error('[monthly-summary] empty response, stop_reason:', data.stop_reason);
+    return { statusCode: 502, body: JSON.stringify({ error: 'ai_empty' }) };
+  }
 
   return {
     statusCode: 200,

@@ -28,18 +28,21 @@ export function assertOk({ data, error }, errorKey = 'error.loadData') {
 // ------------------------------------------------------------
 // קטגוריות
 // ------------------------------------------------------------
+/**
+ * כולל גם קטגוריות בארכיון: תנועות ישנות, גרפים ו-CSV צריכים את השם והאייקון
+ * שלהן. בוררי הקטגוריה מסננים אותן בעצמם (ראה categoriesByKind ב-transactions.js).
+ */
 export async function fetchCategories(userId) {
   const res = await supabase
     .from('categories')
-    .select('id, name, name_en, kind, icon, color, sort_order')
+    .select('id, name, name_en, kind, icon, color, sort_order, is_archived')
     .eq('user_id', userId)
-    .eq('is_archived', false)
     .order('kind', { ascending: true })
     .order('sort_order', { ascending: true });
   return assertOk(res, 'error.loadData');
 }
 
-/** כולל גם קטגוריות בארכיון — למסך "ניהול קטגוריות" בלבד */
+/** למסך "ניהול קטגוריות" */
 export async function fetchAllCategories(userId) {
   const res = await supabase
     .from('categories')

@@ -76,7 +76,7 @@ async function processRule(userId, rule, todayPeriod, todayDay) {
 // גיליון "תנועה קבועה חדשה / עריכה" — אותו דפוס כמו entry sheet
 // ------------------------------------------------------------
 function catsGridHtml(kind, selectedId) {
-  const cats = getAllCategories().filter((c) => c.kind === kind);
+  const cats = getAllCategories().filter((c) => c.kind === kind && !c.is_archived);
   return cats.map((c) => `
     <button class="catchip${c.id === selectedId ? ' is-selected' : ''}" type="button" data-id="${c.id}">
       <span class="catchip__icon" aria-hidden="true">${c.icon}</span>

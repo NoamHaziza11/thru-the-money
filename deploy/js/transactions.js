@@ -29,7 +29,7 @@ export async function loadPeriodTransactions(userId, period) {
 }
 
 function categoriesByKind(kind) {
-  return categories.filter((c) => c.kind === kind);
+  return categories.filter((c) => c.kind === kind && !c.is_archived);
 }
 
 function findCategory(id) {

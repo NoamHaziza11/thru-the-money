@@ -63,7 +63,18 @@ function renderPeriod() {
 // רשימת התנועות של "היום" בלבד (מכבדת סינון קטגוריה פעיל) — נקראת גם
 // כ-callback מ-renderCategoryFilterChips כדי לא לרענן יתר על המידה יתרה/גרף.
 function renderTodayList() {
-  renderTransactionList(onRowClick, onDataChanged);
+  renderTransactionList(onRowClick, onSwipeDeleted);
+}
+
+// מחיקה בהחלקה לא טוענת מחדש בעצמה (בניגוד לגיליון העריכה) — בלי הטעינה
+// כאן השורה והיתרה נשארים על המסך עד רענון.
+async function onSwipeDeleted() {
+  try {
+    await loadPeriodTransactions(userId, period);
+    await onDataChanged();
+  } catch (err) {
+    toast(t(err.message), 'error');
+  }
 }
 
 function renderTodayScreen() {
