@@ -8,7 +8,7 @@
 // בלי זה הטלפון ממשיך להגיש גרסה ישנה מהמטמון.
 // ============================================================
 
-const CACHE_VERSION = 'v4';
+const CACHE_VERSION = 'v5';
 const SHELL_CACHE = `ttm-shell-${CACHE_VERSION}`;
 const FONT_CACHE = `ttm-fonts-${CACHE_VERSION}`;
 
@@ -25,6 +25,7 @@ const SHELL_ASSETS = [
   './js/db.js',
   './js/format.js',
   './js/i18n.js',
+  './js/push.js',
   './js/recurring.js',
   './js/summary.js',
   './js/transactions.js',
@@ -100,4 +101,39 @@ self.addEventListener('fetch', (event) => {
   if (url.origin === self.location.origin) {
     event.respondWith(staleWhileRevalidate(request, SHELL_CACHE));
   }
+});
+
+// ------------------------------------------------------------
+// תזכורות — השרת שולח {title, body, tag}, וכאן מציגים את ההתראה.
+// iOS דורש שכל הודעה שמגיעה תוצג. בלי showNotification, הוא מבטל את המנוי.
+// ------------------------------------------------------------
+self.addEventListener('push', (event) => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch {
+    data = { body: event.data ? event.data.text() : '' };
+  }
+  event.waitUntil(
+    self.registration.showNotification(data.title || 'Thru The Money', {
+      body: data.body || '',
+      icon: './icons/icon-192.png',
+      badge: './icons/icon-192.png',
+      tag: data.tag || 'ttm-reminder',
+      data: { url: './' },
+    }),
+  );
+});
+
+// לחיצה על ההתראה → פותחת את האפליקציה (או מעבירה אליה אם כבר פתוחה)
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windows) => {
+      for (const win of windows) {
+        if ('focus' in win) return win.focus();
+      }
+      return self.clients.openWindow(event.notification.data?.url || './');
+    }),
+  );
 });

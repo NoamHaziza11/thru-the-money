@@ -199,6 +199,26 @@ export async function deleteRecurringRule(id) {
 }
 
 // ------------------------------------------------------------
+// תזכורות (Web Push) — מכשיר אחד = שורה אחת, לפי endpoint
+// ------------------------------------------------------------
+export async function upsertPushSubscription(userId, { endpoint, p256dh, auth, lang }) {
+  const res = await supabase
+    .from('push_subscriptions')
+    .upsert({ user_id: userId, endpoint, p256dh, auth, lang }, { onConflict: 'endpoint' });
+  return assertOk(res, 'push.saveFailed');
+}
+
+export async function deletePushSubscription(endpoint) {
+  const res = await supabase.from('push_subscriptions').delete().eq('endpoint', endpoint);
+  return assertOk(res, 'push.saveFailed');
+}
+
+export async function updatePushLang(endpoint, lang) {
+  const res = await supabase.from('push_subscriptions').update({ lang }).eq('endpoint', endpoint);
+  return assertOk(res, 'push.saveFailed');
+}
+
+// ------------------------------------------------------------
 // דוחות חודשיים (כולל טקסט ה-AI)
 // ------------------------------------------------------------
 export async function fetchMonthlySummary(userId, year, month) {

@@ -14,6 +14,11 @@ export const SUPABASE_URL = 'https://uxqkczpesksqqjhhnecf.supabase.co';
 export const SUPABASE_ANON_KEY =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV4cWtjenBlc2tzcXFqaGhuZWNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU4ODI5ODIsImV4cCI6MjEwMTQ1ODk4Mn0.VIQwTnr-oJ0SNQ-6px5SGWTqKpNIm3iE01xgaii7olc';
 
+// המפתח הציבורי של התזכורות (VAPID). ציבורי בכוונה: הדפדפן צריך אותו
+// כדי להירשם לתזכורות. המפתח הפרטי שמתאים לו יושב רק ב-Netlify.
+export const VAPID_PUBLIC_KEY =
+  'BF6KzUWFfx1FO7mE1_QbSP4ks240SJ9yHS3I2cYVJis7iknlKn1MZtqCZhpk_ZjHktWxyvZuGBxztI5mPTR3ybI';
+
 // אזור הזמן שבו נקבע מה זה "היום". לא לשנות.
 export const TZ = 'America/Los_Angeles';
 

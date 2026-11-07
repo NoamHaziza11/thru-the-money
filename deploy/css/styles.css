@@ -623,6 +623,11 @@ button { cursor: pointer; border: none; background: none; }
   text-align: center;
 }
 
+/* ---------- תזכורות (בגיליון ההגדרות) ---------- */
+.push__desc   { color: var(--muted); font-size: .9rem; margin-bottom: 6px; }
+.push__status { font-size: .9rem; font-weight: 600; margin-bottom: 12px; }
+.push__actions { display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px; }
+
 /* ============================================================
    14.5 ניהול קטגוריות
    ============================================================ */

@@ -8,6 +8,7 @@ import {
 } from './db.js';
 import { getAllCategories, getCategory, categoryName } from './transactions.js';
 import { openCategoriesSheet } from './categories.js';
+import { pushSectionHtml, wirePushSection } from './push.js';
 import { $, esc, openSheet, closeSheet, toast } from './ui.js';
 import { todayLA, shiftPeriod, money } from './format.js';
 import { t } from './i18n.js';
@@ -249,6 +250,8 @@ export function openSettingsSheet(userId, onRuleChanged) {
 
       <h3 class="screen__title" data-i18n="categories.sectionTitle">${esc(t('categories.sectionTitle'))}</h3>
       <button class="btn btn--ghost btn--block" id="manage-categories-btn" type="button">${t('categories.manageBtn')}</button>
+
+      ${pushSectionHtml()}
     </div>`;
 
   openSheet({
@@ -272,6 +275,8 @@ export function openSettingsSheet(userId, onRuleChanged) {
       sheetEl.querySelector('#manage-categories-btn').addEventListener('click', () => {
         openCategoriesSheet(userId, onRuleChanged);
       });
+
+      wirePushSection(sheetEl, userId);
     },
   });
 }
